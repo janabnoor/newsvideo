@@ -1,0 +1,58 @@
+/* ============================================================
+   MOBILE / RESPONSIVE OVERRIDES
+   Single-page mode below the tablet breakpoint, larger touch
+   targets, repositioned rail to clear thumb zones & notches.
+   ============================================================ */
+
+/* Tablet and below: comfortable arrow sizing, tighter rail */
+@media (max-width: 900px) {
+  :root { --arrow-size: 48px; }
+
+  .nav-arrow svg { width: 24px; height: 24px; }
+  .nav-arrow--prev { left: 8px; }
+  .nav-arrow--next { right: 8px; }
+
+  .control-rail {
+    bottom: max(14px, env(safe-area-inset-bottom));
+    padding: 5px 8px;
+    gap: 2px;
+  }
+}
+
+/* Phones: single-page mode, full-bleed page, larger tap zones for arrows */
+@media (max-width: 640px) {
+  :root { --arrow-size: 44px; }
+
+  .book-wrapper { perspective: 1600px; }
+
+  .nav-arrow {
+    width: var(--arrow-size);
+    height: var(--arrow-size);
+  }
+  .nav-arrow svg { width: 21px; height: 21px; }
+  .nav-arrow--prev { left: 6px; }
+  .nav-arrow--next { right: 6px; }
+
+  .rail-label { display: none; } /* keep rail compact on small phones */
+  .rail-page-indicator { font-size: 11px; min-width: 40px; }
+  .control-rail { gap: 0; padding: 5px 6px; }
+  .rail-btn { width: 32px; height: 32px; }
+
+  .loader-text { font-size: 11px; }
+
+  .video-hotspot-play { width: 52px; height: 52px; }
+  .video-hotspot-play svg { width: 20px; height: 20px; }
+  .video-hotspot-close { width: 28px; height: 28px; top: 6px; right: 6px; }
+}
+
+/* Short / landscape phones: shrink loader, hug rail closer to edge */
+@media (max-height: 420px) {
+  .control-rail { bottom: 8px; }
+  .loader-book { width: 70px; height: 54px; }
+}
+
+/* Notch-safe area for navigation arrows */
+@supports (padding: max(0px)) {
+  .nav-arrow--prev { left: max(6px, env(safe-area-inset-left)); }
+  .nav-arrow--next { right: max(6px, env(safe-area-inset-right)); }
+}

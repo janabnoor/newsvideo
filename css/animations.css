@@ -1,0 +1,72 @@
+/* ============================================================
+   ANIMATIONS — page turns, loading shimmer, ambient motion
+   ============================================================ */
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes loaderFlip {
+  0%, 100% { transform: translateX(-50%) rotateY(0deg); }
+  50%      { transform: translateX(-50%) rotateY(-150deg); }
+}
+
+@keyframes loaderDot {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+
+/* Fade-in for the whole book once first pages are ready.
+   Opacity-only (no transform) so it can never conflict with the
+   zoom/pan transform JS applies to #book, regardless of which
+   element either animation targets. */
+@keyframes bookReveal {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.book-wrapper.is-ready {
+  animation: bookReveal 480ms var(--ease-soft) both;
+}
+
+/* Subtle ambient bob — barely perceptible, sells "real object" stillness
+   without looking like a generic float animation. Disabled on touch drag.
+   Applied to the wrapper (not #book itself) so it never fights with the
+   zoom/pan transform that JS applies directly to #book. */
+@keyframes ambientRest {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+.book-wrapper.is-idle {
+  animation: ambientRest 6s ease-in-out infinite;
+}
+
+/* Page-turn glow flash at the spine on release, sells "snap" of paper */
+@keyframes spineFlash {
+  0%   { opacity: 0; }
+  30%  { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+.spine-flash {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 5;
+}
+.spine-flash.is-active {
+  animation: spineFlash 380ms ease-out;
+}
+
+/* Arrow nudge to invite first interaction (plays once) */
+@keyframes arrowInvite {
+  0%, 100% { transform: translateY(-50%) translateX(0); }
+  50%      { transform: translateY(-50%) translateX(6px); }
+}
+.nav-arrow--next.invite {
+  animation: arrowInvite 1.4s ease-in-out 2;
+}

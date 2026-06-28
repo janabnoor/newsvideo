@@ -1,0 +1,421 @@
+/* ============================================================
+   FLIPBOOK STRUCTURE & CHROME-FREE CONTROLS
+   ============================================================ */
+
+/* ---- Loading state ---- */
+.loader {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: var(--color-bg-deep);
+  transition: opacity var(--dur-fade) var(--ease-soft);
+}
+.loader.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loader-book {
+  position: relative;
+  width: 90px;
+  height: 70px;
+}
+.loader-page {
+  position: absolute;
+  top: 0; left: 50%;
+  width: 42px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--color-paper), var(--color-paper-edge));
+  border-radius: 2px 6px 6px 2px;
+  transform-origin: left center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+.loader-page--1 { animation: loaderFlip 1.6s ease-in-out infinite; animation-delay: 0s; }
+.loader-page--2 { animation: loaderFlip 1.6s ease-in-out infinite; animation-delay: 0.18s; opacity: 0.7; }
+.loader-page--3 { animation: loaderFlip 1.6s ease-in-out infinite; animation-delay: 0.36s; opacity: 0.4; }
+
+.loader-text {
+  margin: 0;
+  color: var(--color-brass);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.loader-dots span { animation: loaderDot 1.2s infinite; opacity: 0; }
+.loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+.loader-progress {
+  width: 160px;
+  height: 2px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.loader-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--color-brass);
+  transition: width 200ms var(--ease-soft);
+}
+
+/* ---- Book wrapper: centers the book, holds perspective ---- */
+.book-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 2600px;
+  perspective-origin: 50% 50%;
+}
+
+.book {
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+  touch-action: none;
+}
+
+/* Soft contact shadow grounding the book on the backdrop */
+.book-shadow {
+  position: absolute;
+  bottom: -4%;
+  left: 50%;
+  width: 70%;
+  height: 36px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 50% 100% at 50% 50%, rgba(0,0,0,0.55), transparent 75%);
+  filter: blur(2px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---- Single page sheet (mobile: one at a time / desktop leaf in spread) ---- */
+.sheet {
+  position: absolute;
+  top: 0;
+  background: var(--color-paper);
+  background-size: cover;
+  border-radius: 2px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.4) inset,
+    0 18px 50px rgba(0,0,0,0.45);
+  transform-style: preserve-3d;
+  will-change: transform;
+  backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.sheet canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* paper edge highlight — gives the "real paper" rim light */
+.sheet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,0.10) 0%, transparent 4%, transparent 96%, rgba(0,0,0,0.06) 100%);
+}
+
+/* page thickness illusion on the spine side */
+.sheet::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 6px;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,0.18), transparent);
+  z-index: 2;
+}
+.sheet[data-side="left"]::before { right: 0; transform: scaleX(-1); }
+.sheet[data-side="right"]::before { left: 0; }
+
+/* dynamic shadow cast while a page is turning */
+.sheet .turn-shadow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.5), transparent 60%);
+  transition: opacity 120ms linear;
+}
+.sheet.is-turning .turn-shadow { opacity: 1; }
+
+/* placeholder shimmer while a page's canvas hasn't rendered yet */
+.sheet.is-loading {
+  background: linear-gradient(100deg, var(--color-paper) 30%, var(--color-paper-edge) 50%, var(--color-paper) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* ---- Navigation arrows: glassy, always visible, never on top of text ---- */
+.nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--arrow-size);
+  height: var(--arrow-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: rgba(250, 246, 238, 0.92);
+  cursor: pointer;
+  z-index: 10;
+  padding: 0;
+  transition: color 220ms var(--ease-soft), opacity 220ms var(--ease-soft),
+              transform 220ms var(--ease-soft), background 220ms var(--ease-soft),
+              border-color 220ms var(--ease-soft), box-shadow 220ms var(--ease-soft);
+}
+.nav-arrow svg {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+}
+/* Sit just outside the page on wide screens so the glass disc never
+   overlaps the content; on narrow viewports there's no margin to
+   spare, so mobile.css pulls them back in to a small inset. */
+.nav-arrow--prev { left: clamp(6px, 3vw, 28px); }
+.nav-arrow--next { right: clamp(6px, 3vw, 28px); }
+
+.nav-arrow:hover {
+  color: var(--color-brass);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(201, 160, 90, 0.45);
+  transform: translateY(-50%) scale(1.08);
+  box-shadow:
+    0 8px 26px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(201, 160, 90, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.nav-arrow:active { transform: translateY(-50%) scale(0.94); }
+.nav-arrow:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Floating control rail: minimal, bottom-center, auto-hide ---- */
+.control-rail {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%) translateY(0);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(21, 16, 11, 0.55);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 320ms var(--ease-soft), transform 320ms var(--ease-soft);
+  pointer-events: none;
+}
+.control-rail.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+.rail-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: rgba(250, 246, 238, 0.75);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 180ms var(--ease-soft), color 180ms var(--ease-soft);
+}
+.rail-btn svg { width: 17px; height: 17px; }
+.rail-btn:hover {
+  background: rgba(201, 160, 90, 0.16);
+  color: var(--color-brass);
+}
+.rail-btn:active { transform: scale(0.92); }
+
+.rail-label, .rail-page-indicator {
+  font-size: 12px;
+  color: rgba(250, 246, 238, 0.65);
+  min-width: 38px;
+  text-align: center;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.rail-page-indicator { min-width: 52px; }
+
+.rail-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255,255,255,0.12);
+  margin: 0 2px;
+}
+
+/* ============================================================
+   VIDEO HOTSPOT — turns a page image into an inline video player.
+   Positioned in % of the sheet so it tracks the page exactly at
+   every breakpoint, zoom level, and during the 3D flip itself.
+   ============================================================ */
+.video-hotspot {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50; /* above the canvas, below the turn-shadow's visual top layer */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Subtle hover tint on the image itself, hinting it's interactive,
+   without obscuring the photo underneath. */
+.video-hotspot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 5, 0);
+  transition: background 240ms var(--ease-soft);
+  pointer-events: none;
+}
+.video-hotspot:hover::after {
+  background: rgba(10, 8, 5, 0.12);
+}
+.video-hotspot.is-playing::after { display: none; }
+
+.video-hotspot-play {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px) saturate(150%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 220ms var(--ease-soft), background 220ms var(--ease-soft),
+              box-shadow 220ms var(--ease-soft);
+}
+.video-hotspot-play svg {
+  width: 26px;
+  height: 26px;
+  margin-left: 3px; /* optical centering for the triangle */
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+}
+.video-hotspot:hover .video-hotspot-play {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.26);
+  box-shadow:
+    0 10px 34px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(201, 160, 90, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.video-hotspot-play:active { transform: scale(0.96); }
+
+/* Soft pulsing ring to draw the eye without being distracting */
+.video-hotspot-ring {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  animation: hotspotPulse 2.6s ease-out infinite;
+}
+@keyframes hotspotPulse {
+  0%   { transform: scale(0.85); opacity: 0.7; }
+  70%  { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+.video-hotspot.is-playing .video-hotspot-play {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms var(--ease-soft);
+}
+
+/* The live video frame — fades in, fills the exact same region the
+   photo occupied, so it reads as part of the page layout rather
+   than a popup. */
+.video-hotspot-frame {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 18px 40px rgba(0,0,0,0.5);
+  animation: hotspotFrameIn 320ms var(--ease-soft) both;
+}
+@keyframes hotspotFrameIn {
+  from { opacity: 0; transform: scale(0.985); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.video-hotspot-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.video-hotspot-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(10, 8, 5, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: background 180ms var(--ease-soft), transform 180ms var(--ease-soft);
+}
+.video-hotspot-close svg { width: 14px; height: 14px; }
+.video-hotspot-close:hover {
+  background: rgba(10, 8, 5, 0.8);
+  transform: scale(1.08);
+}
+.video-hotspot-close:active { transform: scale(0.94); }
+
